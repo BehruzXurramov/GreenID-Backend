@@ -30,6 +30,7 @@ Main domains:
 
 ### 3.1 Base URL
 
+- Production API (HTTPS): `https://bestapi.uz/greenid`
 - Local API default: `http://localhost:3000/greenid`
 - Port comes from `PORT` env var, default `3000`
 
@@ -118,6 +119,8 @@ Important:
 
 - Callback currently returns JSON directly, not a frontend redirect.
 - If your frontend needs redirect-based token handoff, backend needs an additional redirect strategy (not currently implemented).
+- For production, set Google OAuth redirect URI exactly to:
+  - `https://bestapi.uz/greenid/auth/google/callback`
 
 ## 4.5 JWT expiration behavior
 
@@ -391,7 +394,7 @@ export interface UpdateSubmissionAdminDto {
 
 Set frontend env variables:
 
-- `VITE_API_BASE_URL` (or equivalent): backend API base URL, for example `http://localhost:3000/greenid`
+- `VITE_API_BASE_URL` (or equivalent): backend API base URL, for example `https://bestapi.uz/greenid`
 - `GOOGLE_LOGIN_URL`: `${API_BASE_URL}/auth/google`
 
 ## 8.2 Token handling
@@ -433,6 +436,7 @@ From validation schema and example env:
 - `GOOGLE_CLIENT_ID` (required)
 - `GOOGLE_CLIENT_SECRET` (required)
 - `GOOGLE_CALLBACK_URL` (required, valid URI)
+  - Production value: `https://bestapi.uz/greenid/auth/google/callback`
 
 ## 10. Endpoint Matrix (Quick View)
 
