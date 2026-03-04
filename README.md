@@ -111,14 +111,14 @@ Recommended browser flow:
 1. Frontend redirects browser to `GET /greenid/auth/google`.
 2. User signs in on Google and consents.
 3. Google redirects to backend callback URL (`/greenid/auth/google/callback`).
-4. Backend responds with JSON:
-   - `accessToken`
-   - `user`
+4. Backend creates JWT + user payload and responds with a redirect to frontend:
+   - `${FRONTEND_URL}/auth/callback?accessToken=<jwt>&user=<json-string>`
 
 Important:
 
-- Callback currently returns JSON directly, not a frontend redirect.
-- If your frontend needs redirect-based token handoff, backend needs an additional redirect strategy (not currently implemented).
+- Backend callback now uses frontend redirect handoff, not direct JSON response.
+- `user` is URL-encoded JSON, so frontend should decode and parse it safely.
+- `FRONTEND_URL` fallback is `http://localhost:5173` if env var is not set.
 - For production, set Google OAuth redirect URI exactly to:
   - `https://bestapi.uz/greenid/auth/google/callback`
 
@@ -213,22 +213,10 @@ All endpoints are relative to base URL and include the global prefix `/greenid`.
 ### `GET /greenid/auth/google/callback`
 
 - Auth: none (Google guard-protected callback)
-- Response:
-
-```json
-{
-  "accessToken": "<jwt>",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "name": "User Name",
-    "role": "user",
-    "points": 0,
-    "createdAt": "2026-03-04T06:00:00.000Z",
-    "updatedAt": "2026-03-04T06:00:00.000Z"
-  }
-}
-```
+- Behavior:
+  - Issues `accessToken` and user payload
+  - Redirects (`302`) to:
+    - `${FRONTEND_URL}/auth/callback?accessToken=<jwt>&user=<url-encoded-json>`
 
 Possible errors:
 
@@ -399,7 +387,9 @@ Set frontend env variables:
 
 ## 8.2 Token handling
 
-- Save `accessToken` after successful login callback.
+- Read `accessToken` from frontend callback URL query params.
+- Read `user` from query params, URL-decode it, then `JSON.parse(...)`.
+- Save parsed auth state after successful callback parsing.
 - Send on protected calls:
   - `Authorization: Bearer <token>`
 - Handle `401` globally by clearing session and redirecting to login.
@@ -425,6 +415,7 @@ From validation schema and example env:
 
 - `NODE_ENV` (`development|test|production`, default `development`)
 - `PORT` (default `3000`)
+- `FRONTEND_URL` (default fallback in controller: `http://localhost:5173`)
 - `DB_HOST` (required)
 - `DB_PORT` (default `5432`)
 - `DB_USERNAME` (required)
@@ -444,7 +435,7 @@ From validation schema and example env:
 |---|---|---|---|---|
 | GET | `/greenid` | No | Public | Health check |
 | GET | `/greenid/auth/google` | No | Public | Starts OAuth |
-| GET | `/greenid/auth/google/callback` | No | Public | Returns token + user |
+| GET | `/greenid/auth/google/callback` | No | Public | Redirects to frontend callback with token + user query params |
 | GET | `/greenid/users/me` | Yes | Any authenticated | Current user |
 | GET | `/greenid/users` | Yes | Admin | All users |
 | POST | `/greenid/submissions` | Yes | Any authenticated | Create submission |
