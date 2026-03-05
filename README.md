@@ -2,6 +2,8 @@
 
 This document describes the backend API contract and behavior so you can implement the frontend safely.
 
+Live: https://bestapi.uz/greenid/
+
 ## 1. Project Overview
 
 GreenID backend is a NestJS API with:
